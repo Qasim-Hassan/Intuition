@@ -1,4 +1,5 @@
-# Golang API
-An API Server implemented in GO from scratch.
+# Intuition (TUI-Notes app)
 
-**Not completed, I'm building it :)**
+A Terminal User Interface note-taking application written in Go using *bubbletea*.
+
+Cread, save, edit, and delete notes from your terminal.
