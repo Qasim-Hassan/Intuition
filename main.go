@@ -10,7 +10,7 @@ type model struct {
 	msg string
 }
 
-func (m model) inti() tea.Cmd {
+func (m model) init() tea.Cmd {
 	return nil
 }
 
