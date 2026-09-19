@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
+	"path/filepath"
 
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
@@ -15,8 +17,18 @@ type model struct {
 }
 
 var (
+	vault       string
 	cursorColor = lipgloss.Color("205")
 )
+
+func init() {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal("Error getting home directory", err)
+	}
+
+	vault = filepath.Join(homeDir, ".intuition")
+}
 
 func (m model) Init() tea.Cmd {
 	return nil
@@ -63,6 +75,11 @@ func (m model) View() tea.View {
 }
 
 func initializeMode() model {
+	err := os.MkdirAll(vault, 0750)
+	if err != nil {
+		log.Fatal("Error in creating directory", err)
+	}
+
 	ti := textinput.New()
 	ti.Placeholder = "Enter file name..."
 	ti.SetVirtualCursor(false)
