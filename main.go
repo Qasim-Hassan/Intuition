@@ -14,6 +14,10 @@ type model struct {
 	createFileInputVisible bool
 }
 
+var (
+	cursorColor = lipgloss.Color("205")
+)
+
 func (m model) Init() tea.Cmd {
 	return nil
 }
@@ -63,7 +67,14 @@ func initializeMode() model {
 	ti.Placeholder = "Enter file name..."
 	ti.SetVirtualCursor(false)
 	ti.Focus()
-	ti.CharLimit = 15
+	ti.CharLimit = 25
+	ti.SetVirtualCursor(true)
+	ti.SetWidth(20)
+
+	s := ti.Styles()
+	s.Cursor.Color = cursorColor
+
+	ti.SetStyles(s)
 
 	return model{newMessageField: ti, createFileInputVisible: false}
 }
