@@ -65,11 +65,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 
 				m.newFile = newFile
+				m.createFileInputVisible = false
+				m.newFileInput.SetValue("")
 			}
 
 			return m, nil
 		}
 	}
+
 	if m.createFileInputVisible {
 		m.newFileInput, cmd = m.newFileInput.Update(msg)
 	}
@@ -95,11 +98,13 @@ func (m model) View() tea.View {
 }
 
 func initializeMode() model {
+	//creating file
 	err := os.MkdirAll(vault, 0750)
 	if err != nil {
 		log.Fatal("Error in creating directory", err)
 	}
 
+	//initialize new file name input
 	ti := textinput.New()
 	ti.Placeholder = "Enter file name..."
 	ti.SetVirtualCursor(false)
@@ -112,6 +117,8 @@ func initializeMode() model {
 	s.Cursor.Color = cursorColor
 
 	ti.SetStyles(s)
+
+	//initialize file content text area
 
 	return model{newFileInput: ti, createFileInputVisible: false}
 }
