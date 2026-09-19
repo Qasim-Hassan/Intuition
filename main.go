@@ -67,7 +67,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 
-			m.currentFile.WriteString(m.noteTextArea.Value())
+			if _, err := m.currentFile.WriteString(m.noteTextArea.Value()); err != nil {
+				fmt.Println("Error saving the file")
+				return m, nil
+			}
+
+			if err := m.currentFile.Close(); err != nil {
+				fmt.Println("Error saving the file")
+			}
+
+			m.currentFile = nil
+			m.noteTextArea.SetValue("")
 
 			return m, nil
 
