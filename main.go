@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"charm.land/bubbles/v2/textarea"
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
@@ -14,7 +15,8 @@ import (
 type model struct {
 	newFileInput           textinput.Model
 	createFileInputVisible bool
-	newFile                *os.File
+	currentFile            *os.File
+	noteTextArea           textarea.Model
 }
 
 var (
@@ -50,6 +52,35 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.createFileInputVisible = true
 			return m, nil
 
+		case "ctrl+s":
+			if m.currentFile == nil {
+				break
+			}
+
+			if err := m.currentFile.Truncate(0); err != nil {
+				fmt.Println("Error saving the file")
+				return m, nil
+			}
+
+			if _, err := m.currentFile.Seek(0, 0); err != nil {
+				fmt.Println("Error saving the file")
+				return m, nil
+			}
+
+			if _, err := m.currentFile.WriteString(m.noteTextArea.Value()); err != nil {
+				fmt.Println("Error saving the file")
+				return m, nil
+			}
+
+			if err := m.currentFile.Close(); err != nil {
+				fmt.Println("Error saving the file")
+			}
+
+			m.currentFile = nil
+			m.noteTextArea.SetValue("")
+
+			return m, nil
+
 		case "enter":
 			filename := m.newFileInput.Value()
 			if filename != "" {
@@ -64,7 +95,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					log.Fatal("Error creating file", err)
 				}
 
-				m.newFile = newFile
+				m.currentFile = newFile
 				m.createFileInputVisible = false
 				m.newFileInput.SetValue("")
 			}
@@ -75,6 +106,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	if m.createFileInputVisible {
 		m.newFileInput, cmd = m.newFileInput.Update(msg)
+	}
+
+	if m.currentFile != nil {
+		m.noteTextArea, cmd = m.noteTextArea.Update(msg)
 	}
 
 	return m, cmd
@@ -92,6 +127,10 @@ func (m model) View() tea.View {
 
 	if m.createFileInputVisible {
 		view = m.newFileInput.View()
+	}
+
+	if m.currentFile != nil {
+		view = m.noteTextArea.View()
 	}
 
 	return tea.View{Content: fmt.Sprintf("\n%s\n\n%s\n\n%s", welcomemsg, view, help)}
@@ -119,8 +158,14 @@ func initializeMode() model {
 	ti.SetStyles(s)
 
 	//initialize file content text area
+	txtarea := textarea.New()
+	txtarea.Placeholder = "Write markdown here..."
+	txtarea.SetVirtualCursor(true)
+	txtarea.ShowLineNumbers = false
+	txtarea.SetStyles(textarea.DefaultStyles(true)) // default to dark styles.
+	txtarea.Focus()
 
-	return model{newFileInput: ti, createFileInputVisible: false}
+	return model{newFileInput: ti, createFileInputVisible: false, noteTextArea: txtarea}
 }
 
 func main() {
