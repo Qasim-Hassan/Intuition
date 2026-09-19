@@ -2,12 +2,16 @@ package main
 
 import (
 	"fmt"
+	"os"
 
+	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 type model struct {
-	msg string
+	newMessageField        textinput.Model
+	createFileInputVisible bool
 }
 
 func (m model) Init() tea.Cmd {
@@ -15,19 +19,60 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	return m, nil
+	var cmd tea.Cmd
+
+	switch msg := msg.(type) {
+
+	case tea.KeyPressMsg:
+		switch msg.String() {
+
+		case "ctrl+c", "ctrl+q":
+			return m, tea.Quit
+
+		case "ctrl+n":
+			m.createFileInputVisible = true
+			return m, nil
+		}
+	}
+	if m.createFileInputVisible {
+		m.newMessageField, cmd = m.newMessageField.Update(msg)
+	}
+
+	return m, cmd
 }
 
 func (m model) View() tea.View {
-	return tea.View{Content: "baigan"}
+
+	var style = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("16")).
+		Background(lipgloss.Color("205")).Padding(0, 2, 0, 2)
+
+	welcomemsg := style.Render("Welcome to Intuition")
+	help := "Ctrl+N: new file - Ctrl+L: list - Esc: back/save - Ctrl+S: save - Ctrl+Q: quit"
+
+	view := ""
+
+	if m.createFileInputVisible {
+		view = m.newMessageField.View()
+	}
+
+	return tea.View{Content: fmt.Sprintf("\n%s\n\n%s\n\n%s", welcomemsg, view, help)}
 }
 
 func initializeMode() model {
-	return model{
-		msg: "ayo",
-	}
+	ti := textinput.New()
+	ti.Placeholder = "Enter file name..."
+	ti.SetVirtualCursor(false)
+	ti.Focus()
+	ti.CharLimit = 15
+
+	return model{newMessageField: ti, createFileInputVisible: false}
 }
 
 func main() {
-	fmt.Println("Welcome to Intuition")
+	p := tea.NewProgram(initializeMode())
+
+	if _, err := p.Run(); err != nil {
+		fmt.Printf("Error occured: %v", err)
+		os.Exit(1)
+	}
 }
