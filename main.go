@@ -32,7 +32,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() tea.View {
 
-	var style = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("16")).Background(lipgloss.Color("205"))
+	var style = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("16")).
+		Background(lipgloss.Color("205")).Padding(0, 2, 0, 2)
 
 	welcomemsg := style.Render("Welcome to Intuition")
 	return tea.View{Content: welcomemsg}
