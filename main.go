@@ -12,8 +12,9 @@ import (
 )
 
 type model struct {
-	newMessageField        textinput.Model
+	newFileInput           textinput.Model
 	createFileInputVisible bool
+	newFile                *os.File
 }
 
 var (
@@ -48,10 +49,29 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+n":
 			m.createFileInputVisible = true
 			return m, nil
+
+		case "enter":
+			filename := m.newFileInput.Value()
+			if filename != "" {
+				filepath := fmt.Sprintf("%s/%s.md", vault, filename)
+
+				if _, err := os.Stat(filepath); err == nil {
+					return m, nil
+				}
+
+				newFile, err := os.Create(filepath)
+				if err != nil {
+					log.Fatal("Error creating file", err)
+				}
+
+				m.newFile = newFile
+			}
+
+			return m, nil
 		}
 	}
 	if m.createFileInputVisible {
-		m.newMessageField, cmd = m.newMessageField.Update(msg)
+		m.newFileInput, cmd = m.newFileInput.Update(msg)
 	}
 
 	return m, cmd
@@ -68,7 +88,7 @@ func (m model) View() tea.View {
 	view := ""
 
 	if m.createFileInputVisible {
-		view = m.newMessageField.View()
+		view = m.newFileInput.View()
 	}
 
 	return tea.View{Content: fmt.Sprintf("\n%s\n\n%s\n\n%s", welcomemsg, view, help)}
@@ -93,7 +113,7 @@ func initializeMode() model {
 
 	ti.SetStyles(s)
 
-	return model{newMessageField: ti, createFileInputVisible: false}
+	return model{newFileInput: ti, createFileInputVisible: false}
 }
 
 func main() {
