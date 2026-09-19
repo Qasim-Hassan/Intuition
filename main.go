@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"os"
 
+	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 )
 
 type model struct {
-	msg string
+	newMessageField textinput.Model
 }
 
 func (m model) Init() tea.Cmd {
@@ -44,9 +45,7 @@ func (m model) View() tea.View {
 }
 
 func initializeMode() model {
-	return model{
-		msg: "ayo",
-	}
+	return model{}
 }
 
 func main() {
