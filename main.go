@@ -22,7 +22,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
 
-		case "ctrl+c":
+		case "ctrl+c", "ctrl+q":
 			return m, tea.Quit
 		}
 	}
@@ -36,7 +36,11 @@ func (m model) View() tea.View {
 		Background(lipgloss.Color("205")).Padding(0, 2, 0, 2)
 
 	welcomemsg := style.Render("Welcome to Intuition")
-	return tea.View{Content: welcomemsg}
+	help := "Ctrl+N: new file - Ctrl+L: list - Esc: back/save - Ctrl+S: save - Ctrl+Q: quit"
+
+	view := ""
+
+	return tea.View{Content: fmt.Sprintf("\n%s\n\n%s\n\n%s", welcomemsg, view, help)}
 }
 
 func initializeMode() model {
