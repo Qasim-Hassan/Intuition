@@ -82,6 +82,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 
 		case "enter":
+			if m.currentFile != nil {
+				break
+			}
+
 			filename := m.newFileInput.Value()
 			if filename != "" {
 				filepath := fmt.Sprintf("%s/%s.md", vault, filename)
