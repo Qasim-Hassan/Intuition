@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"charm.land/bubbles/v2/list"
 	"charm.land/bubbles/v2/textarea"
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
@@ -16,12 +17,14 @@ type model struct {
 	newFileInput           textinput.Model
 	createFileInputVisible bool
 	currentFile            *os.File
+	list                   list.Model
 	noteTextArea           textarea.Model
 }
 
 var (
 	vault       string
 	cursorColor = lipgloss.Color("205")
+	docStyle    = lipgloss.NewStyle().Margin(1, 2)
 )
 
 func init() {
@@ -41,6 +44,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		h, v := docStyle.GetFrameSize()
+		m.list.SetSize(msg.Width-h, msg.Height-v)
 
 	case tea.KeyPressMsg:
 		switch msg.String() {
