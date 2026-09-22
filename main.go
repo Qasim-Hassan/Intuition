@@ -55,7 +55,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		h, v := docStyle.GetFrameSize()
-		m.list.SetSize(msg.Width-h, msg.Height-v)
+		m.list.SetSize(msg.Width-h, msg.Height-v-5)
 
 	case tea.KeyPressMsg:
 		switch msg.String() {
@@ -103,6 +103,29 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			if m.currentFile != nil {
 				break
+			}
+
+			if m.showList {
+				selectedFile, ok := m.list.SelectedItem().(item)
+				if ok {
+					selectedPath := fmt.Sprintf("%s/%s", vault, selectedFile.title)
+
+					content, err := os.ReadFile(selectedPath)
+					if err != nil {
+						log.Printf("Error reading file: %v", err)
+						return m, nil
+					}
+
+					m.noteTextArea.SetValue(string(content))
+
+					f, err := os.OpenFile(selectedPath, os.O_RDWR, 0644)
+					if err != nil {
+						log.Printf("Error reading file: %v", err)
+						return m, nil
+					}
+
+					m.currentFile = f
+				}
 			}
 
 			filename := m.newFileInput.Value()
