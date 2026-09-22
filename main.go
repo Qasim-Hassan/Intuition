@@ -21,6 +21,14 @@ type model struct {
 	noteTextArea           textarea.Model
 }
 
+type item struct {
+	title, desc string
+}
+
+func (i item) Title() string       { return i.title }
+func (i item) Description() string { return i.desc }
+func (i item) FilterValue() string { return i.title }
+
 var (
 	vault       string
 	cursorColor = lipgloss.Color("205")
@@ -144,6 +152,35 @@ func (m model) View() tea.View {
 	}
 
 	return tea.View{Content: fmt.Sprintf("\n%s\n\n%s\n\n%s", welcomemsg, view, help)}
+}
+
+func listFiles() []list.Item {
+	items := make([]list.Item, 0)
+
+	entries, err := os.ReadDir(vault)
+
+	if err != nil {
+		log.Fatal("Error reading notes")
+	}
+
+	for _, entry := range entries {
+
+		if !entry.IsDir() {
+			info, err := entry.Info()
+			if err != nil {
+				continue
+			}
+
+			modTime := info.ModTime().Format("2006-01-02 15:04")
+
+			items = append(items, item{
+				title: entry.Name(),
+				desc:  fmt.Sprintf("Modified: %s", modTime),
+			})
+		}
+	}
+
+	return items
 }
 
 func initializeMode() model {
