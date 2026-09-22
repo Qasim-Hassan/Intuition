@@ -63,11 +63,32 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "ctrl+q":
 			return m, tea.Quit
 
+		case "esc":
+			if m.createFileInputVisible {
+				m.createFileInputVisible = false
+			}
+
+			if m.currentFile != nil {
+				m.currentFile = nil
+			}
+
+			if m.showList {
+				if m.list.FilterState() == list.Filtering {
+					break
+				}
+
+				m.showList = false
+			}
+
+			return m, nil
+
 		case "ctrl+n":
 			m.createFileInputVisible = true
 			return m, nil
 
 		case "ctrl+l":
+			noteList := listFiles()
+			m.list.SetItems(noteList)
 			m.showList = true
 			return m, nil
 
@@ -175,7 +196,7 @@ func (m model) View() tea.View {
 		Background(lipgloss.Color("205")).Padding(0, 2, 0, 2)
 
 	welcomemsg := style.Render("Welcome to Intuition")
-	help := "Ctrl+N: new file - Ctrl+L: list - Esc: back/save - Ctrl+S: save - Ctrl+Q: quit"
+	help := "Ctrl+N: new file - Ctrl+L: list - Esc: back - Ctrl+S: save - Ctrl+Q: quit"
 
 	view := ""
 
