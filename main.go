@@ -208,7 +208,7 @@ func (m *model) View() tea.View {
 	var style = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("16")).
 		Background(lipgloss.Color("205")).Padding(0, 2, 0, 2)
 
-	help := "Ctrl+N: new file - Ctrl+L: list - Esc: back - Ctrl+S: save - Ctrl+Q: quit"
+	help := "Ctrl+N: new file - Ctrl+L: list - q: back - Ctrl+S: save - Ctrl+Q: quit"
 
 	view := ""
 
