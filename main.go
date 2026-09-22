@@ -17,9 +17,18 @@ type model struct {
 	newFileInput           textinput.Model
 	createFileInputVisible bool
 	currentFile            *os.File
-	list                   list.Model
 	noteTextArea           textarea.Model
+	list                   list.Model
+	showList               bool
 }
+
+type item struct {
+	title, desc string
+}
+
+func (i item) Title() string       { return i.title }
+func (i item) Description() string { return i.desc }
+func (i item) FilterValue() string { return i.title }
 
 var (
 	vault       string
@@ -46,7 +55,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		h, v := docStyle.GetFrameSize()
-		m.list.SetSize(msg.Width-h, msg.Height-v)
+		m.list.SetSize(msg.Width-h, msg.Height-v-5)
 
 	case tea.KeyPressMsg:
 		switch msg.String() {
@@ -56,6 +65,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "ctrl+n":
 			m.createFileInputVisible = true
+			return m, nil
+
+		case "ctrl+l":
+			m.showList = true
 			return m, nil
 
 		case "ctrl+s":
@@ -92,6 +105,33 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				break
 			}
 
+			if m.showList {
+				selectedFile, ok := m.list.SelectedItem().(item)
+				if ok {
+					selectedPath := fmt.Sprintf("%s/%s", vault, selectedFile.title)
+
+					content, err := os.ReadFile(selectedPath)
+					if err != nil {
+						log.Printf("Error reading file: %v", err)
+						return m, nil
+					}
+
+					m.noteTextArea.SetValue(string(content))
+
+					f, err := os.OpenFile(selectedPath, os.O_RDWR, 0644)
+					if err != nil {
+						log.Printf("Error reading file: %v", err)
+						return m, nil
+					}
+
+					m.currentFile = f
+					m.showList = false
+				}
+
+				return m, nil
+
+			}
+
 			filename := m.newFileInput.Value()
 			if filename != "" {
 				filepath := fmt.Sprintf("%s/%s.md", vault, filename)
@@ -122,6 +162,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.noteTextArea, cmd = m.noteTextArea.Update(msg)
 	}
 
+	if m.showList {
+		m.list, cmd = m.list.Update(msg)
+	}
+
 	return m, cmd
 }
 
@@ -143,7 +187,40 @@ func (m model) View() tea.View {
 		view = m.noteTextArea.View()
 	}
 
+	if m.showList {
+		view = m.list.View()
+	}
+
 	return tea.View{Content: fmt.Sprintf("\n%s\n\n%s\n\n%s", welcomemsg, view, help)}
+}
+
+func listFiles() []list.Item {
+	items := make([]list.Item, 0)
+
+	entries, err := os.ReadDir(vault)
+
+	if err != nil {
+		log.Fatal("Error reading notes")
+	}
+
+	for _, entry := range entries {
+
+		if !entry.IsDir() {
+			info, err := entry.Info()
+			if err != nil {
+				continue
+			}
+
+			modTime := info.ModTime().Format("2006-01-02 15:04")
+
+			items = append(items, item{
+				title: entry.Name(),
+				desc:  fmt.Sprintf("Modified: %s", modTime),
+			})
+		}
+	}
+
+	return items
 }
 
 func initializeMode() model {
@@ -175,7 +252,20 @@ func initializeMode() model {
 	txtarea.SetStyles(textarea.DefaultStyles(true)) // default to dark styles.
 	txtarea.Focus()
 
-	return model{newFileInput: ti, createFileInputVisible: false, noteTextArea: txtarea}
+	//list
+	noteList := listFiles()
+
+	finalList := list.New(noteList, list.NewDefaultDelegate(), 0, 0)
+	finalList.Title = "Saved Notes"
+	finalList.Styles.Title = lipgloss.NewStyle().Foreground(lipgloss.Color("16")).
+		Background(lipgloss.Color("254")).Padding(0, 1)
+
+	return model{
+		newFileInput:           ti,
+		createFileInputVisible: false,
+		noteTextArea:           txtarea,
+		list:                   finalList,
+	}
 }
 
 func main() {
