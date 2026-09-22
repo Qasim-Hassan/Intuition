@@ -135,6 +135,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.noteTextArea, cmd = m.noteTextArea.Update(msg)
 	}
 
+	if m.showList {
+		m.list, cmd = m.list.Update(msg)
+	}
+
 	return m, cmd
 }
 
@@ -224,11 +228,16 @@ func initializeMode() model {
 	//list
 	noteList := listFiles()
 
+	finalList := list.New(noteList, list.NewDefaultDelegate(), 0, 0)
+	finalList.Title = "Saved Notes"
+	finalList.Styles.Title = lipgloss.NewStyle().Foreground(lipgloss.Color("16")).
+		Background(lipgloss.Color("254")).Padding(0, 1)
+
 	return model{
 		newFileInput:           ti,
 		createFileInputVisible: false,
 		noteTextArea:           txtarea,
-		list:                   list.New(noteList, list.NewDefaultDelegate(), 0, 0),
+		list:                   finalList,
 	}
 }
 
