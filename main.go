@@ -20,6 +20,7 @@ type model struct {
 	noteTextArea           textarea.Model
 	list                   list.Model
 	showList               bool
+	welcomeShown           bool
 }
 
 type item struct {
@@ -45,11 +46,11 @@ func init() {
 	vault = filepath.Join(homeDir, ".intuition")
 }
 
-func (m model) Init() tea.Cmd {
+func (m *model) Init() tea.Cmd {
 	return nil
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
@@ -58,16 +59,49 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.list.SetSize(msg.Width-h, msg.Height-v-5)
 
 	case tea.KeyPressMsg:
+		m.welcomeShown = true
+
 		switch msg.String() {
 
 		case "ctrl+c", "ctrl+q":
 			return m, tea.Quit
+
+		case "q":
+			if m.showList && m.list.FilterState() != list.Filtering {
+				m.list.Title = ""
+				m.list.Styles.Title = lipgloss.NewStyle()
+				m.showList = false
+				return m, tea.ClearScreen
+			}
+
+			if m.currentFile != nil {
+				if err := m.currentFile.Close(); err != nil {
+					log.Printf("Error closing file: %v", err)
+				}
+				m.currentFile = nil
+				m.noteTextArea.SetValue("")
+				return m, tea.ClearScreen
+			}
+
+			if m.createFileInputVisible {
+				m.createFileInputVisible = false
+				return m, tea.ClearScreen
+			}
+
+			return m, nil
 
 		case "ctrl+n":
 			m.createFileInputVisible = true
 			return m, nil
 
 		case "ctrl+l":
+			noteList := listFiles()
+			finalList := list.New(noteList, list.NewDefaultDelegate(), 0, 0)
+			finalList.Title = "Saved Notes"
+			finalList.Styles.Title = lipgloss.NewStyle().Foreground(lipgloss.Color("16")).
+				Background(lipgloss.Color("254")).Padding(0, 1)
+
+			m.list.SetItems(finalList.Items())
 			m.showList = true
 			return m, nil
 
@@ -169,13 +203,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m model) View() tea.View {
+func (m *model) View() tea.View {
 
 	var style = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("16")).
 		Background(lipgloss.Color("205")).Padding(0, 2, 0, 2)
 
-	welcomemsg := style.Render("Welcome to Intuition")
-	help := "Ctrl+N: new file - Ctrl+L: list - Esc: back/save - Ctrl+S: save - Ctrl+Q: quit"
+	help := "Ctrl+N: new file - Ctrl+L: list - q: back - Ctrl+S: save - Ctrl+Q: quit"
 
 	view := ""
 
@@ -191,7 +224,12 @@ func (m model) View() tea.View {
 		view = m.list.View()
 	}
 
-	return tea.View{Content: fmt.Sprintf("\n%s\n\n%s\n\n%s", welcomemsg, view, help)}
+	content := fmt.Sprintf("%s\n\n%s", view, help)
+	if !m.welcomeShown {
+		content = fmt.Sprintf("%s\n\n%s", style.Render("Welcome to Intuition"), content)
+	}
+
+	return tea.View{Content: content}
 }
 
 func listFiles() []list.Item {
@@ -223,7 +261,7 @@ func listFiles() []list.Item {
 	return items
 }
 
-func initializeMode() model {
+func initializeMode() *model {
 	//creating file
 	err := os.MkdirAll(vault, 0750)
 	if err != nil {
@@ -260,11 +298,12 @@ func initializeMode() model {
 	finalList.Styles.Title = lipgloss.NewStyle().Foreground(lipgloss.Color("16")).
 		Background(lipgloss.Color("254")).Padding(0, 1)
 
-	return model{
+	return &model{
 		newFileInput:           ti,
 		createFileInputVisible: false,
 		noteTextArea:           txtarea,
 		list:                   finalList,
+		welcomeShown:           false,
 	}
 }
 
