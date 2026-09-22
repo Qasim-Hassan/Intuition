@@ -125,7 +125,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 
 					m.currentFile = f
+					m.showList = false
 				}
+
+				return m, nil
+
 			}
 
 			filename := m.newFileInput.Value()
