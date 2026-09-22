@@ -17,8 +17,9 @@ type model struct {
 	newFileInput           textinput.Model
 	createFileInputVisible bool
 	currentFile            *os.File
-	list                   list.Model
 	noteTextArea           textarea.Model
+	list                   list.Model
+	showList               bool
 }
 
 type item struct {
@@ -64,6 +65,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "ctrl+n":
 			m.createFileInputVisible = true
+			return m, nil
+
+		case "ctrl+l":
+			m.showList = true
 			return m, nil
 
 		case "ctrl+s":
@@ -151,6 +156,10 @@ func (m model) View() tea.View {
 		view = m.noteTextArea.View()
 	}
 
+	if m.showList {
+		view = m.list.View()
+	}
+
 	return tea.View{Content: fmt.Sprintf("\n%s\n\n%s\n\n%s", welcomemsg, view, help)}
 }
 
@@ -212,7 +221,15 @@ func initializeMode() model {
 	txtarea.SetStyles(textarea.DefaultStyles(true)) // default to dark styles.
 	txtarea.Focus()
 
-	return model{newFileInput: ti, createFileInputVisible: false, noteTextArea: txtarea}
+	//list
+	noteList := listFiles()
+
+	return model{
+		newFileInput:           ti,
+		createFileInputVisible: false,
+		noteTextArea:           txtarea,
+		list:                   list.New(noteList, list.NewDefaultDelegate(), 0, 0),
+	}
 }
 
 func main() {
